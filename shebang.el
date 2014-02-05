@@ -1,4 +1,4 @@
-;;; shebang.el --- Package which helps insert shebang for a command
+;;; shebang.el --- Emacs package which helps insert shebang
 
 ;; Copyright (C) 2014 Andrey Tykhonov <atykhonov@gmail.com>
 
