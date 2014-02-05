@@ -4,7 +4,7 @@
 
 ;; Author: Andrey Tykhonov <atykhonov@gmail.com>
 ;; URL: https://github.com/atykhonov/emacs-shebang
-;; Version: 0.1.0
+;; Version: 0.2.0
 ;; Keywords: convenience
 
 ;; This file is NOT part of GNU Emacs.
