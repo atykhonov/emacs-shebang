@@ -65,6 +65,43 @@
 
 ;;; Code:
 
+;; shebang for command
+
+(defun shebang-for-command--insert (command)
+  "Insert at point shebang line for COMMAND."
+  (insert (shebang--for-command command)))
+
+(defun shebang-for-command-insert-at-point (command)
+  "Insert at point shebang line for COMMAND."
+  (interactive "sCommand: ")
+  (shebang-for-command--insert command))
+
+(defun shebang-for-command-insert (command)
+  "Insert at the beginning of buffer shebang line for COMMAND."
+  (interactive "sCommand: ")
+  (shebang--goto-beginning-of-buffer)
+  (shebang-for-command--insert command))
+
+;; shebang for env with command
+
+(defun shebang-for-env-with-command--insert (command)
+  "Insert at point shebang line for `env' with parameter COMMAND."
+  (insert (shebang--for-command "env" command)))t
+
+(defun shebang-for-env-with-command-insert-at-point (command)
+  "Insert at point shebang line for `env' with parameter COMMAND."
+  (interactive "sCommand: ")
+  (shebang-for-env-with-command--insert command))
+
+(defun shebang-for-env-with-command-insert (command)
+  "Insert at the beginning of buffer shebang line for `env' with
+parameter COMMAND."
+  (interactive "sCommand: ")
+  (shebang--goto-beginning-of-buffer)
+  (shebang-for-env-with-command--insert command))
+
+;; common functions
+
 (defun trim-string (string)
   "Remove white spaces in beginning and ending of STRING.
   White space here is any of: space, tab, emacs newline (line
@@ -76,48 +113,57 @@
 
 (defun shebang--which (command)
   "Return the full path of COMMAND."
-  (trim-string
-   (shell-command-to-string (format "which %s" command))))
+  (let ((buffer-name " *Shebang Output*") (exit-status) (output))
+    (with-current-buffer (get-buffer-create buffer-name)
+      (erase-buffer)
+      (setq exit-status
+            (call-process "which" nil buffer-name nil command))
+        (setq output (trim-string (buffer-string)))
+        (kill-buffer))
+    (if (equal exit-status 0)
+        output
+      (error "Shebang error: %s" output))))
 
-(defun shebang--for-command (command)
-  "Return shebang line for COMMAND."
+(defun shebang--for-command (command &optional parameters)
+  "Return shebang line with COMMAND with its PARAMETERS."
   (let ((command-path (shebang--which command)))
-    (shebang--format command-path)))
+    (shebang--format command-path parameters)))
 
-(defun shebang-insert (override-p)
+(defun shebang--format (command &optional parameters)
+  "Format shebang line with COMMAND and its PARAMETERS."
+  (format "#!%s%s"
+          command
+          (if parameters
+              (format " %s" parameters)
+            "")))
+
+(defun shebang--goto-beginning-of-buffer ()
+  (goto-char (point-min)))
+
+;; auto loads
+
+;;;###autoload
+(defun shebang-insert-at-point (override-p)
   "Insert at point shebang line for command about which you'll be queried.
 
 With a `C-u' prefix argument, insert at point shebang line for
-`env' with COMMAND."
+`env' with parameter COMMAND."
   (interactive "P")
   (if override-p
       (call-interactively 'shebang-for-env-with-command-insert)
     (call-interactively 'shebang-for-command-insert)))
 
-(defun shebang--for-env-with-command (command)
-  "Return shebang line for env with COMMAND."
-  (let ((env-path (shebang--which "env")))
-    (shebang--format (format "%s %s" env-path command))))
+;;;###autoload
+(defun shebang-insert (override-p)
+  "Insert at the beginning of buffer shebang line for command about which you'll be queried.
 
-(defun shebang-for-command-insert (command)
-  "Insert at point shebang line for COMMAND."
-  (interactive "sCommand: ")
-  (insert (shebang--for-command command)))
+With a `C-u' prefix argument, insert shebang line for `env' with
+parameter COMMAND."
+  (interactive "P")
+  (shebang--goto-beginning-of-buffer)
+  (call-interactively shebang-insert-at-point))
 
-(defun shebang-for-env-with-command-insert (command)
-  "Insert at point shebang line for env with COMMAND."
-  (interactive "sCommand: ")
-  (insert (shebang--for-env-with-command command)))
-
-(defun shebang-env-insert (command)
-  "Insert shebang line for env with COMMAND."
-  (interactive "sCommand: ")
-  (insert (shebang--for-env-with-command command)))
-
-(defun shebang--format (string)
-  "Format shebang line with STRING."
-  (format "#!%s" string))
-
+;;
 
 (provide 'shebang)
 
